@@ -1,0 +1,35 @@
+I need an idea:
+Create an API function that returns a creative content idea or writing prompt for a blogger.
+The idea should be fresh, inspiring, and tailored for someone experiencing writer’s block.
+Use Gemini (via Pica) and generate a response based on a random instruction or context.
+Return the generated idea as a short string.
+
+-> VITE_PICA_IDEA_MESSAGE_ACTION_ID
+
+
+
+Support Me:
+Create an agent that supports a content creator who is feeling burnout from editing. 
+When the user clicks a button labeled “Support Me,” the agent generates a short motivational message 
+(using Gemini 1.5-flash) and converts it to speech (using ElevenLabs).
+
+-> VITE_PICA_SUPPORT_MESSAGE_ACTION_ID
+-> VITE_PICA_SUPPORT_AUDIO_ACTION_ID
+
+
+
+I Published:
+Create an agent that congratulates a blogger who has just published new content.
+When the user clicks a button labeled "I Published!", the agent generates a kind, supportive, and motivational message (using Gemini 1.5-flash).
+The message should be tailored for someone who has just shared their work and needs encouragement.
+Return the generated message as a short plain text string.
+
+-> VITE_PICA_PUBLISHED_MESSAGE_ACTION_ID
+
+
+
+// Not realized yet
+Make Me Smile:
+-> VITE_PICA_SMILE_ACTION_ID
+
+Hello Creator:

@@ -2,6 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Heart, Smile, Trophy, Play, Pause, Volume2, MessageCircle } from 'lucide-react';
 import axios from 'axios';
 import type { ButtonState, MediaContent } from '../types';
+import {
+  PICA_SECRET_KEY,
+  PICA_GEMINI_KEY,
+  PICA_ELEVENLABS_KEY,
+  PICA_SUPPORT_MESSAGE_ACTION_ID,
+  PICA_SUPPORT_AUDIO_ACTION_ID,
+  PICA_PUBLISHED_MESSAGE_ACTION_ID,
+  ELEVENLABS_VOICE_ID,
+} from '../config/env';
 
 const ActionButtons: React.FC = () => {
   const [buttonStates, setButtonStates] = useState<Record<string, ButtonState>>({
@@ -29,20 +38,13 @@ const ActionButtons: React.FC = () => {
     "Praise a blogger who feels nervous after publishing."
   ];
 
-  const VITE_PICA_SECRET_KEY = import.meta.env.VITE_PICA_SECRET_KEY;
-  const VITE_PICA_GEMINI_CONNECTION_KEY = import.meta.env.VITE_PICA_GEMINI_CONNECTION_KEY;
-  const VITE_PICA_GEMINI_ACTION_ID = import.meta.env.VITE_PICA_GEMINI_ACTION_ID;
-  const VITE_PICA_ELEVENLABS_CONNECTION_KEY = import.meta.env.VITE_PICA_ELEVENLABS_CONNECTION_KEY;
-  const VITE_PICA_ELEVENLABS_ACTION_ID = import.meta.env.VITE_PICA_ELEVENLABS_ACTION_ID;
-  const VOICE_ID = import.meta.env.VITE_ELEVENLABS_VOICE_ID;
-
   // Helper function to check if voice ID is valid (not a placeholder)
-  const isValidVoiceId = (voiceId: string | undefined): boolean => {
-    return !!(voiceId && 
-           voiceId !== 'your_voice_id_here' && 
-           voiceId.trim() !== '' &&
-           !voiceId.includes('your_') &&
-           !voiceId.includes('_here'));
+  const isValidVoiceId = (ELEVENLABS_VOICE_ID: string | undefined): boolean => {
+    return !!(ELEVENLABS_VOICE_ID && 
+           ELEVENLABS_VOICE_ID !== 'your_voice_id_here' && 
+           ELEVENLABS_VOICE_ID.trim() !== '' &&
+           !ELEVENLABS_VOICE_ID.includes('your_') &&
+           !ELEVENLABS_VOICE_ID.includes('_here'));
   };
 
   // Browser-compatible function to convert ArrayBuffer to Base64
@@ -61,7 +63,9 @@ const ActionButtons: React.FC = () => {
     });
   };
 
-  const generateSupportMessage = async (): Promise<MediaContent> => {
+  // Action of "Support Me" button
+  const generateSupportMessageAndAudio = async (): Promise<MediaContent> => {
+    console.log('Click "support" button');
     try {
       // 1. Generate motivational message
       const geminiRes = await axios.post(
@@ -78,9 +82,9 @@ const ActionButtons: React.FC = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-pica-secret': VITE_PICA_SECRET_KEY,
-            'x-pica-connection-key': VITE_PICA_GEMINI_CONNECTION_KEY,
-            'x-pica-action-id': VITE_PICA_GEMINI_ACTION_ID
+            'x-pica-secret': PICA_SECRET_KEY,
+            'x-pica-connection-key': PICA_GEMINI_KEY,
+            'x-pica-action-id': PICA_SUPPORT_MESSAGE_ACTION_ID
           }
         }
       );
@@ -88,19 +92,19 @@ const ActionButtons: React.FC = () => {
       const motivationalMessage = geminiRes.data.candidates?.[0]?.content?.parts?.[0]?.text || '🛑 You are doing amazing work! Take a breath and remember why you started creating.';
 
       // 2. Convert to speech only if we have a valid voice ID
-      if (isValidVoiceId(VOICE_ID)) {
+      if (isValidVoiceId(ELEVENLABS_VOICE_ID)) {
         try {
           const elevenRes = await axios.post(
-            `https://api.picaos.com/v1/passthrough/v1/text-to-speech/${VOICE_ID}`,
+            `https://api.picaos.com/v1/passthrough/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
             {
               text: motivationalMessage
             },
             {
               headers: {
                 'Content-Type': 'application/json',
-                'x-pica-secret': VITE_PICA_SECRET_KEY,
-                'x-pica-connection-key': VITE_PICA_ELEVENLABS_CONNECTION_KEY,
-                'x-pica-action-id': VITE_PICA_ELEVENLABS_ACTION_ID
+                'x-pica-secret': PICA_SECRET_KEY,
+                'x-pica-connection-key': PICA_ELEVENLABS_KEY,
+                'x-pica-action-id': PICA_SUPPORT_AUDIO_ACTION_ID
               },
               responseType: 'arraybuffer'
             }
@@ -108,7 +112,6 @@ const ActionButtons: React.FC = () => {
 
           // Convert ArrayBuffer to Base64 using browser-compatible method
           const audioBase64 = await arrayBufferToBase64(elevenRes.data);
-          console.log(audioBase64);
           
           return {
             type: 'audio',
@@ -147,16 +150,18 @@ const ActionButtons: React.FC = () => {
     }
   };
 
+  // Action of "I published!" button
   const sendMotivationalMessage = async (): Promise<MediaContent> => {
+    console.log('Click "published" button');
     try {
       const selectedInstruction = PROMPT_INSTRUCTIONS[Math.floor(Math.random() * PROMPT_INSTRUCTIONS.length)];
 
       const prompt = `
         You are a kind motivational coach for content creators. A user has just published a new blog post or video.
-        
+
         Instruction: ${selectedInstruction}
-        
-        Respond with a warm, short, encouraging message.
+
+        Respond with a warm, short, kind, supportive, and encouraging motivational message. It should be tailored for someone who has just shared their work and needs affirmation. Return only the message as a plain text string.
         `;
       
       const response = await axios.post(
@@ -169,9 +174,9 @@ const ActionButtons: React.FC = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-pica-secret': VITE_PICA_SECRET_KEY,
-            'x-pica-connection-key': VITE_PICA_GEMINI_CONNECTION_KEY,
-            'x-pica-action-id': VITE_PICA_GEMINI_ACTION_ID
+            'x-pica-secret': PICA_SECRET_KEY,
+            'x-pica-connection-key': PICA_GEMINI_KEY,
+            'x-pica-action-id': PICA_PUBLISHED_MESSAGE_ACTION_ID
           }
         }
       );
@@ -225,7 +230,7 @@ const ActionButtons: React.FC = () => {
 
       if (buttonKey === 'support') {
         // Generate support message with text-to-speech
-        content = await generateSupportMessage();
+        content = await generateSupportMessageAndAudio();
       } else if (buttonKey === 'published') {
         // Fetch dynamic motivational message for published button
         content = await sendMotivationalMessage();

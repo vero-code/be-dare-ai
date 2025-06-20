@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { Lightbulb, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import type { Challenge } from '../types';
+import {
+  PICA_SECRET_KEY,
+  PICA_GEMINI_KEY,
+  PICA_IDEA_MESSAGE_ACTION_ID,
+} from '../config/env';
 
 const ChallengeGenerator: React.FC = () => {
   const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const VITE_PICA_SECRET_KEY = import.meta.env.VITE_PICA_SECRET_KEY;
-  const VITE_PICA_GEMINI_CONNECTION_KEY = import.meta.env.VITE_PICA_GEMINI_CONNECTION_KEY;
-  const VITE_PICA_GEMINI_ACTION_ID = import.meta.env.VITE_PICA_GEMINI_ACTION_ID;
-
   const getCreativeBlogIdea = async (): Promise<string> => {
+    console.log('Click "idea" button');
     try {
       const response = await axios.post(
         'https://api.picaos.com/v1/passthrough/models/gemini-1.5-flash:generateContent',
@@ -30,9 +32,9 @@ const ChallengeGenerator: React.FC = () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-pica-secret': VITE_PICA_SECRET_KEY,
-            'x-pica-connection-key': VITE_PICA_GEMINI_CONNECTION_KEY,
-            'x-pica-action-id': VITE_PICA_GEMINI_ACTION_ID
+            'x-pica-secret': PICA_SECRET_KEY,
+            'x-pica-connection-key': PICA_GEMINI_KEY,
+            'x-pica-action-id': PICA_IDEA_MESSAGE_ACTION_ID
           }
         }
       );
