@@ -13,6 +13,7 @@ import {
 } from '../config/env';
 import AudioPlayer from './AudioPlayer';
 import { mockMediaContent } from '../config/mock';
+import { MOTIVATIONAL_PHRASES_START, MOTIVATIONAL_PHRASES_MIDDLE, MOTIVATIONAL_PHRASES_END, getRandomElement } from '../config/gemini_prompts';
 
 const ActionButtons: React.FC = () => {
   const [buttonStates, setButtonStates] = useState<Record<string, ButtonState>>({
@@ -50,6 +51,13 @@ const ActionButtons: React.FC = () => {
   // Action of "Support Me" button
   const generateSupportMessageAndAudio = async (): Promise<MediaContent> => {
     console.log('Click "support" button');
+    const dynamicPrompt = `
+      Generate a short, motivational message for a content creator experiencing editing burnout.
+      Start with "${getRandomElement(MOTIVATIONAL_PHRASES_START)}".
+      Include the idea that "${getRandomElement(MOTIVATIONAL_PHRASES_MIDDLE)}".
+      End with "${getRandomElement(MOTIVATIONAL_PHRASES_END)}".
+      Keep the total message under 30 words. Focus on encouragement and the value of their work.
+    `;
     try {
       // 1. Generate motivational message
       const geminiRes = await axios.post(
@@ -58,7 +66,7 @@ const ActionButtons: React.FC = () => {
           contents: [
             {
               parts: [
-                { text: 'Generate a short, motivational message for a content creator who is feeling burnout from editing. Keep it under 30 words.' }
+                { text: dynamicPrompt }
               ]
             }
           ]
