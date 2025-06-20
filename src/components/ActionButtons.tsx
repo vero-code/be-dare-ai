@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Heart, Smile, Trophy, Play, Pause, Volume2, MessageCircle } from 'lucide-react';
 import axios from 'axios';
 import type { ButtonState, MediaContent } from '../types';
@@ -12,6 +12,7 @@ import {
   ELEVENLABS_VOICE_ID,
 } from '../config/env';
 import AudioPlayer from './AudioPlayer';
+import { mockMediaContent } from '../config/mock';
 
 const ActionButtons: React.FC = () => {
   const [buttonStates, setButtonStates] = useState<Record<string, ButtonState>>({
@@ -21,14 +22,6 @@ const ActionButtons: React.FC = () => {
   });
 
   const [playingMedia, setPlayingMedia] = useState<string | null>(null);
-
-  const mockMediaContent: Record<string, MediaContent> = {
-    smile: {
-      type: 'video',
-      src: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      title: 'Funny Content'
-    }
-  };
 
   const PROMPT_INSTRUCTIONS = [
     "Say something uplifting to a blogger who just published a new video.",
@@ -191,42 +184,22 @@ const ActionButtons: React.FC = () => {
     }
   };
 
-  // Auto-play audio when support button is activated and content is loaded
-  useEffect(() => {
-    const supportState = buttonStates['support'];
-    if (supportState.isActive && 
-        supportState.content?.type === 'audio') {
-      
-      // Ensure no other media is playing before starting this one
-      if (playingMedia !== 'support') {
-        // Set the audio source and play
-        setPlayingMedia('support');
-      }
-    } else {
-      // If support button is not active or content is not audio, stop playing support media
-      if (playingMedia === 'support') {
-        setPlayingMedia(null);
-      }
-    }
-  }, [buttonStates, playingMedia]);
-
   const handleButtonClick = async (buttonKey: string) => {
     setButtonStates(prev => ({
       ...prev,
       [buttonKey]: { ...prev[buttonKey], isLoading: true }
     }));
 
-    // Stop any currently playing media when a new button is clicked
     if (playingMedia) {
       setPlayingMedia(null);
     }
-    // Deactivate all other buttons except the one being clicked to ensure only one is active at a time
+    
     const newButtonStates: Record<string, ButtonState> = {};
     for (const key in buttonStates) {
       newButtonStates[key] = {
         ...buttonStates[key],
-        isActive: key === buttonKey ? !buttonStates[key].isActive : false, // Toggle clicked button, deactivate others
-        content: key === buttonKey ? buttonStates[key].content : undefined // Clear content of deactivated buttons
+        isActive: key === buttonKey ? !buttonStates[key].isActive : false,
+        content: key === buttonKey ? buttonStates[key].content : undefined
       };
     }
 
@@ -246,10 +219,10 @@ const ActionButtons: React.FC = () => {
       }
 
       setButtonStates(prev => ({
-        ...newButtonStates, // Use the new states derived above
+        ...newButtonStates,
         [buttonKey]: {
           isLoading: false,
-          isActive: !prev[buttonKey].isActive, // Keep the toggle for the clicked button
+          isActive: !prev[buttonKey].isActive,
           content: content
         }
       }));
@@ -257,45 +230,23 @@ const ActionButtons: React.FC = () => {
       console.error('Error handling button click:', error);
       
       setButtonStates(prev => ({
-        ...prev, // Revert to previous state if error, but might still have cleared content
+        ...prev,
         [buttonKey]: {
           isLoading: false,
           isActive: false,
-          content: undefined // Clear content on error
+          content: undefined
         }
       }));
     }
   };
 
   const toggleMedia = (mediaKey: string) => {
-    if (mediaKey === 'support') {
-      // Handle audio play/pause for support button
-      if (playingMedia === 'support') {
-        setPlayingMedia(null);
-      } else {
-        setPlayingMedia('support');
-      }
-    } else {
-      // Handle other media types
-      if (playingMedia === mediaKey) {
-        setPlayingMedia(null);
-      } else {
-        setPlayingMedia(mediaKey);
-      }
-    }
+    setPlayingMedia(prev => (prev === mediaKey ? null : mediaKey));
   };
 
   // Handle audio events
   const handleAudioEnded = () => {
     setPlayingMedia(null);
-  };
-
-  const handleAudioPause = () => {
-    setPlayingMedia(null);
-  };
-
-  const handleAudioPlay = () => {
-    setPlayingMedia('support');
   };
 
   const buttons = [
@@ -441,15 +392,11 @@ const ActionButtons: React.FC = () => {
                             "{state.content.text}"
                           </p>
                         )}
-                        {/* The audio element for support is hidden and controlled by ref */}
-                        {/* This audio element is for display purposes, but its actual playing is managed by audioRef */}
                         {key === 'support' && state.content.src && (
                           <AudioPlayer
                             src={state.content.src}
                             isPlaying={isMediaPlaying}
                             onEnded={handleAudioEnded}
-                            onPause={handleAudioPause}
-                            onPlay={handleAudioPlay}
                           />
                         )}
                       </div>
