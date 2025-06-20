@@ -38,15 +38,6 @@ const ActionButtons: React.FC = () => {
     "Praise a blogger who feels nervous after publishing."
   ];
 
-  // Helper function to check if voice ID is valid (not a placeholder)
-  const isValidVoiceId = (ELEVENLABS_VOICE_ID: string | undefined): boolean => {
-    return !!(ELEVENLABS_VOICE_ID && 
-           ELEVENLABS_VOICE_ID !== 'your_voice_id_here' && 
-           ELEVENLABS_VOICE_ID.trim() !== '' &&
-           !ELEVENLABS_VOICE_ID.includes('your_') &&
-           !ELEVENLABS_VOICE_ID.includes('_here'));
-  };
-
   // Browser-compatible function to convert ArrayBuffer to Base64
   const arrayBufferToBase64 = (buffer: ArrayBuffer): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -92,7 +83,7 @@ const ActionButtons: React.FC = () => {
       const motivationalMessage = geminiRes.data.candidates?.[0]?.content?.parts?.[0]?.text || '🛑 You are doing amazing work! Take a breath and remember why you started creating.';
 
       // 2. Convert to speech only if we have a valid voice ID
-      if (isValidVoiceId(ELEVENLABS_VOICE_ID)) {
+      if (ELEVENLABS_VOICE_ID) {
         try {
           const elevenRes = await axios.post(
             `https://api.picaos.com/v1/passthrough/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
@@ -207,23 +198,49 @@ const ActionButtons: React.FC = () => {
         supportState.content?.type === 'audio' && 
         audioRef.current) {
       
-      // Set the audio source and play
-      audioRef.current.src = supportState.content.src;
-      audioRef.current.play()
-        .then(() => {
-          setPlayingMedia('support');
-        })
-        .catch((error) => {
-          console.error('Error auto-playing audio:', error);
-        });
+      // Ensure no other media is playing before starting this one
+      if (playingMedia !== 'support') {
+        // Set the audio source and play
+        audioRef.current.src = supportState.content.src;
+        audioRef.current.play()
+          .then(() => {
+            setPlayingMedia('support');
+          })
+          .catch((error) => {
+            console.error('Error auto-playing audio:', error);
+          });
+      }
+    } else {
+      // If support button is not active or content is not audio, stop playing support media
+      if (playingMedia === 'support' && audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0; // Reset audio position
+        setPlayingMedia(null);
+      }
     }
-  }, [buttonStates]);
+  }, [buttonStates, playingMedia]);
 
   const handleButtonClick = async (buttonKey: string) => {
     setButtonStates(prev => ({
       ...prev,
       [buttonKey]: { ...prev[buttonKey], isLoading: true }
     }));
+
+    // Stop any currently playing media when a new button is clicked
+    if (playingMedia && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setPlayingMedia(null);
+    }
+    // Deactivate all other buttons except the one being clicked to ensure only one is active at a time
+    const newButtonStates: Record<string, ButtonState> = {};
+    for (const key in buttonStates) {
+      newButtonStates[key] = {
+        ...buttonStates[key],
+        isActive: key === buttonKey ? !buttonStates[key].isActive : false, // Toggle clicked button, deactivate others
+        content: key === buttonKey ? buttonStates[key].content : undefined // Clear content of deactivated buttons
+      };
+    }
 
     try {
       let content: MediaContent;
@@ -241,10 +258,10 @@ const ActionButtons: React.FC = () => {
       }
 
       setButtonStates(prev => ({
-        ...prev,
+        ...newButtonStates, // Use the new states derived above
         [buttonKey]: {
           isLoading: false,
-          isActive: !prev[buttonKey].isActive,
+          isActive: !prev[buttonKey].isActive, // Keep the toggle for the clicked button
           content: content
         }
       }));
@@ -252,10 +269,11 @@ const ActionButtons: React.FC = () => {
       console.error('Error handling button click:', error);
       
       setButtonStates(prev => ({
-        ...prev,
+        ...prev, // Revert to previous state if error, but might still have cleared content
         [buttonKey]: {
           isLoading: false,
-          isActive: false
+          isActive: false,
+          content: undefined // Clear content on error
         }
       }));
     }
@@ -442,16 +460,20 @@ const ActionButtons: React.FC = () => {
                             "{state.content.text}"
                           </p>
                         )}
-                        <audio 
-                          ref={audioRef}
-                          controls 
-                          className="w-full"
-                          onEnded={handleAudioEnded}
-                          onPause={handleAudioPause}
-                          onPlay={handleAudioPlay}
-                        >
-                          Your browser does not support the audio element.
-                        </audio>
+                        {/* The audio element for support is hidden and controlled by ref */}
+                        {/* This audio element is for display purposes, but its actual playing is managed by audioRef */}
+                        {key === 'support' && state.content.src && (
+                          <audio 
+                            ref={audioRef}
+                            controls 
+                            className="w-full"
+                            onEnded={handleAudioEnded}
+                            onPause={handleAudioPause}
+                            onPlay={handleAudioPlay}
+                          >
+                            Your browser does not support the audio element.
+                          </audio>
+                        )}
                       </div>
                     ) : (
                       <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
