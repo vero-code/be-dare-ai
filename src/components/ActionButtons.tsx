@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Smile, Trophy, Play, Pause, Volume2, MessageCircle } from 'lucide-react';
 import axios from 'axios';
 import type { ButtonState, MediaContent } from '../types';
@@ -11,6 +11,7 @@ import {
   PICA_PUBLISHED_MESSAGE_ACTION_ID,
   ELEVENLABS_VOICE_ID,
 } from '../config/env';
+import AudioPlayer from './AudioPlayer';
 
 const ActionButtons: React.FC = () => {
   const [buttonStates, setButtonStates] = useState<Record<string, ButtonState>>({
@@ -20,7 +21,6 @@ const ActionButtons: React.FC = () => {
   });
 
   const [playingMedia, setPlayingMedia] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   const mockMediaContent: Record<string, MediaContent> = {
     smile: {
@@ -195,26 +195,16 @@ const ActionButtons: React.FC = () => {
   useEffect(() => {
     const supportState = buttonStates['support'];
     if (supportState.isActive && 
-        supportState.content?.type === 'audio' && 
-        audioRef.current) {
+        supportState.content?.type === 'audio') {
       
       // Ensure no other media is playing before starting this one
       if (playingMedia !== 'support') {
         // Set the audio source and play
-        audioRef.current.src = supportState.content.src;
-        audioRef.current.play()
-          .then(() => {
-            setPlayingMedia('support');
-          })
-          .catch((error) => {
-            console.error('Error auto-playing audio:', error);
-          });
+        setPlayingMedia('support');
       }
     } else {
       // If support button is not active or content is not audio, stop playing support media
-      if (playingMedia === 'support' && audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0; // Reset audio position
+      if (playingMedia === 'support') {
         setPlayingMedia(null);
       }
     }
@@ -227,9 +217,7 @@ const ActionButtons: React.FC = () => {
     }));
 
     // Stop any currently playing media when a new button is clicked
-    if (playingMedia && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    if (playingMedia) {
       setPlayingMedia(null);
     }
     // Deactivate all other buttons except the one being clicked to ensure only one is active at a time
@@ -280,19 +268,12 @@ const ActionButtons: React.FC = () => {
   };
 
   const toggleMedia = (mediaKey: string) => {
-    if (mediaKey === 'support' && audioRef.current) {
+    if (mediaKey === 'support') {
       // Handle audio play/pause for support button
       if (playingMedia === 'support') {
-        audioRef.current.pause();
         setPlayingMedia(null);
       } else {
-        audioRef.current.play()
-          .then(() => {
-            setPlayingMedia('support');
-          })
-          .catch((error) => {
-            console.error('Error playing audio:', error);
-          });
+        setPlayingMedia('support');
       }
     } else {
       // Handle other media types
@@ -463,16 +444,13 @@ const ActionButtons: React.FC = () => {
                         {/* The audio element for support is hidden and controlled by ref */}
                         {/* This audio element is for display purposes, but its actual playing is managed by audioRef */}
                         {key === 'support' && state.content.src && (
-                          <audio 
-                            ref={audioRef}
-                            controls 
-                            className="w-full"
+                          <AudioPlayer
+                            src={state.content.src}
+                            isPlaying={isMediaPlaying}
                             onEnded={handleAudioEnded}
                             onPause={handleAudioPause}
                             onPlay={handleAudioPlay}
-                          >
-                            Your browser does not support the audio element.
-                          </audio>
+                          />
                         )}
                       </div>
                     ) : (
@@ -490,15 +468,6 @@ const ActionButtons: React.FC = () => {
           );
         })}
       </div>
-
-      {/* Hidden audio element for programmatic control */}
-      <audio
-        ref={audioRef}
-        style={{ display: 'none' }}
-        onEnded={handleAudioEnded}
-        onPause={handleAudioPause}
-        onPlay={handleAudioPlay}
-      />
     </section>
   );
 };
