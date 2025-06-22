@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Heart, Smile, Trophy, Play, Pause, Volume2, MessageCircle } from 'lucide-react';
 import axios from 'axios';
 import type { ButtonState, MediaContent } from '../types';
@@ -8,8 +8,11 @@ import {
   PICA_ELEVENLABS_KEY,
   PICA_SUPPORT_MESSAGE_ACTION_ID,
   PICA_SUPPORT_AUDIO_ACTION_ID,
+  PICA_SMILE_MESSAGE_ACTION_ID,
   PICA_PUBLISHED_MESSAGE_ACTION_ID,
   ELEVENLABS_VOICE_ID,
+  TAVUS_API_KEY,
+  TAVUS_REPLICA_ID,
 } from '../config/env';
 import AudioPlayer from './AudioPlayer';
 import { mockMediaContent } from '../config/mock';
@@ -23,6 +26,7 @@ const ActionButtons: React.FC = () => {
   });
 
   const [playingMedia, setPlayingMedia] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const PROMPT_INSTRUCTIONS = [
     "Say something uplifting to a blogger who just published a new video.",
@@ -49,7 +53,7 @@ const ActionButtons: React.FC = () => {
   };
 
   // Action of "Support Me" button
-  const generateSupportMessageAndAudio = async (): Promise<MediaContent> => {
+  const createSupportMessageAndAudio = async (): Promise<MediaContent> => {
     console.log('Click "support" button');
     const dynamicPrompt = `
       Generate a short, motivational message for a content creator experiencing editing burnout.
@@ -142,6 +146,169 @@ const ActionButtons: React.FC = () => {
     }
   };
 
+  // Action of "Make Me Smile" button
+  // 1. Generate joke text using Gemini
+  const generateJokeText = async (): Promise<string> => {
+    try {
+      const response = await axios.post(
+        'https://api.picaos.com/v1/passthrough/models/gemini-1.5-flash:generateContent',
+        {
+          contents: [
+            {
+              parts: [
+                {
+                  text: 'Generate a short, funny, clean joke or humorous observation that would make a content creator smile. The joke should be uplifting, creative, and suitable for all audiences. Keep it under 50 words and make it relatable to creators or everyday life. Be witty and original.'
+                }
+              ]
+            }
+          ]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-pica-secret': PICA_SECRET_KEY,
+            'x-pica-connection-key': PICA_GEMINI_KEY,
+            'x-pica-action-id': PICA_SMILE_MESSAGE_ACTION_ID
+          }
+        }
+      );
+
+      return response.data.candidates?.[0]?.content?.parts?.[0]?.text || '🛑 Why did the content creator break up with their camera? Because it kept focusing on other things!';
+    } catch (error) {
+      console.error('Error generating joke text:', error);
+      
+      // Fallback jokes if API fails
+      const fallbackJokes = [
+        '🛑 Why did the content creator break up with their camera? Because it kept focusing on other things!',
+        '🛑 I told my computer a joke about algorithms... It didn\'t laugh, but it did process it!',
+        '🛑 Why don\'t content creators ever get lost? Because they always know how to find their niche!',
+        '🛑 What\'s a blogger\'s favorite type of music? Anything with good content!',
+        '🛑 Why did the YouTuber go to therapy? They had too many unresolved issues with their subscribers!'
+      ];
+      
+      return fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+    }
+  };
+
+  // 2. Generate video joke using Tavus API
+  const generateVideoJoke = async (): Promise<MediaContent> => {
+    try {
+      // const jokeText = await generateJokeText();
+      let jokeText = "Hi! This is example a joke.";
+      console.log("Generated joke text:", jokeText);
+
+      if (!TAVUS_API_KEY || !TAVUS_REPLICA_ID) {
+        console.warn('Tavus API or Replica ID not configured properly. Returning text-only joke.');
+        return {
+          type: 'text',
+          title: '🛑 Here\'s a joke to brighten your day!',
+          text: jokeText
+        };
+      }
+
+      const requestBody = {
+        replica_id: TAVUS_REPLICA_ID,
+       script: jokeText,
+        video_name: `Joke Video ${Date.now()}`,
+      };
+
+      console.log("Sending Tavus video creation request with body:", requestBody);
+
+      // Create video using Tavus API
+      const tavusResponse = await axios.post(
+        'https://tavusapi.com/v2/videos',
+        requestBody,
+        {
+          headers: {
+            'x-api-key': TAVUS_API_KEY,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const videoId = tavusResponse.data.video_id;
+
+      if (!videoId) {
+        throw new Error('No video ID returned from Tavus API in the initial creation response.');
+      }
+
+      console.log(`Tavus video creation initiated. Video ID: ${videoId}`);
+
+      // Poll for video completion (simplified polling)
+      let attempts = 0;
+      const maxAttempts = 30; // 5 minutes max wait time (30 attempts * 10 seconds)
+      const pollInterval = 10000; // 10 seconds
+      
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        
+        try {
+          const statusResponse = await axios.get(
+            'https://tavusapi.com/v2/videos/' + videoId,
+            {
+              headers: {
+                'x-api-key': TAVUS_API_KEY
+              }
+            }
+          );
+
+          const status = statusResponse.data.status;
+          console.log(`Polling status for video ${videoId}: ${status}`);
+          
+          if (status === 'completed') {
+            const videoUrl = statusResponse.data.download_url || statusResponse.data.hosted_url;
+            
+            if (videoUrl) {
+              console.log(`Video completed and URL found: ${videoUrl}`);
+              return {
+                type: 'video',
+                src: videoUrl,
+                title: 'AI Generated Video Joke 🎬',
+                text: jokeText
+              };
+            } else {
+              console.error('Video completed but no download_url or hosted_url found.');
+              throw new Error('Video completed but URL not available.');
+            }
+          } else if (status === 'failed' || status === 'error') {
+            console.error(`Video generation failed with status: ${status}. Error details:`, statusResponse.data.error); // Log error details if available
+            throw new Error('Video generation failed');
+          }
+          
+          attempts++;
+        } catch (pollError) {
+          console.error('Error polling video status:', pollError);
+          attempts++;
+        }
+      }
+
+      // If video generation takes too long, return text joke
+      console.warn('Video generation timed out after multiple attempts. Returning text joke.');
+      return {
+        type: 'text',
+        title: '🛑 Here\'s a joke while we work on the video!',
+        text: jokeText + '\n\n(Video generation is taking longer than expected, but the joke is still good!)'
+      };
+
+    } catch (error) {
+      console.error('Overall error generating video joke:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('Tavus API Error Response Data:', error.response.data);
+        console.error('Tavus API Error Response Status:', error.response.status);
+        console.error('Tavus API Error Response Headers:', error.response.headers);
+      }
+      
+      // Fallback to text joke if video generation fails
+      // const jokeTextFallback = await generateJokeText();
+      const jokeTextFallback = "🛑 Hi! This is example a joke.";
+      return {
+        type: 'text',
+        title: '🛑 Video Joke Failed!',
+        text: `Oops! Couldn't generate a video joke right now. But here's a text one: "${jokeTextFallback}"`
+      };
+    }
+  };
+
   // Action of "I published!" button
   const sendMotivationalMessage = async (): Promise<MediaContent> => {
     console.log('Click "published" button');
@@ -216,7 +383,10 @@ const ActionButtons: React.FC = () => {
 
       if (buttonKey === 'support') {
         // Generate support message with text-to-speech
-        content = await generateSupportMessageAndAudio();
+        content = await createSupportMessageAndAudio();
+      } else if (buttonKey === 'smile') {
+        // Generate video joke
+        content = await generateVideoJoke();
       } else if (buttonKey === 'published') {
         // Fetch dynamic motivational message for published button
         content = await sendMotivationalMessage();
@@ -255,6 +425,18 @@ const ActionButtons: React.FC = () => {
   // Handle audio events
   const handleAudioEnded = () => {
     setPlayingMedia(null);
+  };
+
+  const handleVideoEnded = () => {
+    setPlayingMedia(null);
+  };
+
+  const handleVideoPause = () => {
+    setPlayingMedia(null);
+  };
+
+  const handleVideoPlay = () => {
+    setPlayingMedia('smile');
   };
 
   const buttons = [
@@ -407,6 +589,25 @@ const ActionButtons: React.FC = () => {
                             onEnded={handleAudioEnded}
                           />
                         )}
+                      </div>
+                    ) : state.content.type === 'video' ? (
+                      <div className="space-y-3">
+                        {state.content.text && (
+                          <p className="text-sm text-gray-700 italic mb-3">
+                            "{state.content.text}"
+                          </p>
+                        )}
+                        <video 
+                          ref={videoRef}
+                          controls 
+                          className="w-full rounded-lg"
+                          onEnded={handleVideoEnded}
+                          onPause={handleVideoPause}
+                          onPlay={handleVideoPlay}
+                        >
+                          <source src={state.content.src} type="video/mp4" />
+                          Your browser does not support the video element.
+                        </video>
                       </div>
                     ) : (
                       <div className="aspect-video bg-gray-200 rounded-lg flex items-center justify-center">

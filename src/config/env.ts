@@ -24,6 +24,16 @@ const getEnvVariable = (key: string, isOptional: boolean = false): string | unde
     }
   }
 
+  if (key === 'VITE_TAVUS_API_KEY' || key === 'VITE_TAVUS_REPLICA_ID') {
+    if (stringValue === 'your_tavus_api_key_here' ||
+        stringValue === 'your_tavus_replica_id_here' ||
+        stringValue.includes('your_') ||
+        stringValue.includes('_here')) {
+      console.warn(`Warning: Tavus credential for "${key}" ("${stringValue}") looks like a placeholder. Tavus video generation will not be available for the 'Make Me Smile' feature.`);
+      return undefined;
+    }
+  }
+
   return stringValue;
 };
 
@@ -34,8 +44,10 @@ export const PICA_ELEVENLABS_KEY = getEnvVariable('VITE_PICA_ELEVENLABS_CONNECTI
 export const PICA_IDEA_MESSAGE_ACTION_ID = getEnvVariable('VITE_PICA_IDEA_MESSAGE_ACTION_ID');
 export const PICA_SUPPORT_MESSAGE_ACTION_ID = getEnvVariable('VITE_PICA_SUPPORT_MESSAGE_ACTION_ID');
 export const PICA_SUPPORT_AUDIO_ACTION_ID = getEnvVariable('VITE_PICA_SUPPORT_AUDIO_ACTION_ID');
+export const PICA_SMILE_MESSAGE_ACTION_ID = getEnvVariable('VITE_PICA_SMILE_MESSAGE_ACTION_ID');
 export const PICA_PUBLISHED_MESSAGE_ACTION_ID = getEnvVariable('VITE_PICA_PUBLISHED_MESSAGE_ACTION_ID');
 
 export const ELEVENLABS_VOICE_ID = getEnvVariable('VITE_ELEVENLABS_VOICE_ID');
 
 export const TAVUS_API_KEY = getEnvVariable('VITE_TAVUS_API_KEY');
+export const TAVUS_REPLICA_ID = getEnvVariable('VITE_TAVUS_REPLICA_ID');
