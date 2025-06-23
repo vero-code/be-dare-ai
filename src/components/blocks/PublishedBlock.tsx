@@ -83,7 +83,7 @@ const PublishedBlock: React.FC = () => {
             icon={<Trophy className="w-8 h-8 text-white" />}
             bgColor="bg-emerald-500 hover:bg-emerald-600"
             title="Post-publishing devastation"
-            description="Celebrate your achievement with me!"
+            description="Get a personalized text celebration for your achievement!"
           />
           <BlockActionButton
           onClick={handleClick}

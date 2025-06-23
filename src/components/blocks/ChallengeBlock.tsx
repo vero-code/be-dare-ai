@@ -84,13 +84,13 @@ const ChallengeBlock: React.FC = () => {
         <BlockHeader
           icon={<Lightbulb className="w-8 h-8 text-white" />}
           bgColor="bg-indigo-500 hover:bg-indigo-600"
-          title="Creative Challenge Generator"
-          description="No ideas for content? Take a personalized challenge!"
+          title="No ideas for content"
+          description="Get text ideas and personalized challenges to get started!"
         />
         <BlockActionButton
           onClick={generateChallenge}
           isLoading={isLoading}
-          label="Need Idea"
+          label="Inspire Me"
           loadingLabel="Generating..."
           colorClass="bg-indigo-500 hover:bg-indigo-600 text-white hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
         />

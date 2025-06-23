@@ -146,7 +146,7 @@ const SupportBlock: React.FC = () => {
             icon={<Heart className="w-8 h-8 text-white" />}
             bgColor="bg-purple-500 hover:bg-purple-600"
             title="Burnout from video editing"
-            description="Need encouragement? Get personalized motivation."
+            description="Get personalized audio motivation and encouragement."
           />
           <BlockActionButton
             onClick={handleClick}

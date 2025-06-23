@@ -33,7 +33,6 @@ const WelcomeSection: React.FC = () => {
           }
         );
         setReplicaThumbnail(response.data.thumbnail_video_url);
-        console.log('[Replica thumbnail]', response.data.thumbnail_video_url);
       } catch (err) {
         console.error('Failed to load replica thumbnail:', err);
       }
@@ -116,7 +115,7 @@ const WelcomeSection: React.FC = () => {
                     className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 transition shadow"
                   >
                     <Play className="w-4 h-4" />
-                    <span>Start Conversation</span>
+                    <span>Talk to AI</span>
                   </button>
                 </div>
               </div>
