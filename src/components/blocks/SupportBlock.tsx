@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Play, Pause, Volume2, MessageCircle } from 'lucide-react';
-import AudioPlayer from './AudioPlayer';
-import type { ButtonState, MediaContent } from '../types';
+import AudioPlayer from '../AudioPlayer';
+import type { ButtonState, MediaContent } from '../../types';
 import axios from 'axios';
 import {
   PICA_SECRET_KEY,
@@ -10,10 +10,11 @@ import {
   PICA_SUPPORT_MESSAGE_ACTION_ID,
   PICA_SUPPORT_AUDIO_ACTION_ID,
   ELEVENLABS_VOICE_ID,
-} from '../config/env';
-import { MOTIVATIONAL_PHRASES_START, MOTIVATIONAL_PHRASES_MIDDLE, MOTIVATIONAL_PHRASES_END, getRandomElement } from '../config/gemini_prompts';
+} from '../../config/env';
+import { MOTIVATIONAL_PHRASES_START, MOTIVATIONAL_PHRASES_MIDDLE, MOTIVATIONAL_PHRASES_END, getRandomElement } from '../../config/gemini_prompts';
+import BlockHeader from './BlockHeader';
 
-const SupportGenerator: React.FC = () => {
+const SupportBlock: React.FC = () => {
   const [state, setState] = useState<ButtonState>({ isLoading: false, isActive: false });
   const [isMediaPlaying, setIsMediaPlaying] = useState(false);
 
@@ -140,15 +141,12 @@ const SupportGenerator: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
         <div className="text-center">
-          <div className={`inline-flex items-center justify-center w-16 h-16 bg-purple-500 hover:bg-purple-600 rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
-            <Heart className="w-8 h-8 text-white" />
-          </div>
-          <h4 className="text-xl font-bold text-gray-900 mb-2">
-            Burnout from video editing
-          </h4>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            Need encouragement? Get personalized motivation.
-          </p>
+          <BlockHeader
+            icon={<Heart className="w-8 h-8 text-white" />}
+            bgColor="bg-purple-500 hover:bg-purple-600"
+            title="Burnout from video editing"
+            description="Need encouragement? Get personalized motivation."
+          />
           <button
             onClick={handleClick}
             disabled={state.isLoading}
@@ -236,4 +234,4 @@ const SupportGenerator: React.FC = () => {
   );
 };
 
-export default SupportGenerator;
+export default SupportBlock;

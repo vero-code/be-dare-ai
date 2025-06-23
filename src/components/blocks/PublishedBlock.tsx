@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Trophy, Volume2, MessageCircle } from 'lucide-react';
-import type { ButtonState, MediaContent } from '../types';
+import type { ButtonState, MediaContent } from '../../types';
 import axios from 'axios';
 import {
   PICA_SECRET_KEY,
   PICA_GEMINI_KEY,
   PICA_PUBLISHED_MESSAGE_ACTION_ID,
-} from '../config/env';
+} from '../../config/env';
+import BlockHeader from './BlockHeader';
 
 const PROMPT_INSTRUCTIONS = [
   "Say something uplifting to a blogger who just published a new video.",
@@ -16,7 +17,7 @@ const PROMPT_INSTRUCTIONS = [
   "Praise a blogger who feels nervous after publishing."
 ];
 
-const PublishedGenerator: React.FC = () => {
+const PublishedBlock: React.FC = () => {
   const [state, setState] = useState<ButtonState>({ isLoading: false, isActive: false });
 
   const sendMotivationalMessage = async (): Promise<MediaContent> => {
@@ -77,15 +78,12 @@ const PublishedGenerator: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
         <div className="text-center">
-          <div className={`inline-flex items-center justify-center w-16 h-16 bg-emerald-500 hover:bg-emerald-600 rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
-            <Trophy className="w-8 h-8 text-white" />
-          </div>
-          <h4 className="text-xl font-bold text-gray-900 mb-2">
-            Post-publishing devastation
-          </h4>
-          <p className="text-gray-600 mb-6 leading-relaxed">
-            Celebrate your achievement with me!
-          </p>
+          <BlockHeader
+            icon={<Trophy className="w-8 h-8 text-white" />}
+            bgColor="bg-emerald-500 hover:bg-emerald-600"
+            title="Post-publishing devastation"
+            description="Celebrate your achievement with me!"
+          />
           <button
             onClick={handleClick}
             disabled={state.isLoading}
@@ -149,4 +147,4 @@ const PublishedGenerator: React.FC = () => {
   );
 };
 
-export default PublishedGenerator;
+export default PublishedBlock;

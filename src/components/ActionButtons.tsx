@@ -1,7 +1,7 @@
 import React from 'react';
-import ChallengeGenerator from './ChallengeGenerator';
-import SupportGenerator from './SupportGenerator';
-import PublishedGenerator from './PublishedGenerator';
+import ChallengeBlock from './blocks/ChallengeBlock';
+import SupportBlock from './blocks/SupportBlock';
+import PublishedBlock from './blocks/PublishedBlock';
 
 const ActionButtons: React.FC = () => {
   return (
@@ -22,9 +22,9 @@ const ActionButtons: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-slide-down">
-        <ChallengeGenerator />
-        <SupportGenerator />
-        <PublishedGenerator />
+        <ChallengeBlock />
+        <SupportBlock />
+        <PublishedBlock />
       </div>
     </section>
   );
