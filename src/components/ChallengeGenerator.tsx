@@ -84,6 +84,9 @@ const ChallengeGenerator: React.FC = () => {
     >
       <div className="bg-white rounded-2xl shadow-lg p-8">
         <div className="text-center mb-8">
+          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300 bg-indigo-500 hover:bg-indigo-600`}>
+              <Lightbulb className="w-8 h-8 text-white" />
+          </div>
           <h3 
             id="challenge-heading"
             className="text-xl sm:text-2xl font-bold text-gray-900 mb-4"
@@ -91,7 +94,7 @@ const ChallengeGenerator: React.FC = () => {
             Creative Challenge Generator
           </h3>
           <p className="text-gray-600 mb-6">
-            No ideas for content? Stuck on what to create? Let me inspire you with a personalized challenge!
+            No ideas for content? Take a personalized challenge!
           </p>
           
           <button
@@ -111,8 +114,7 @@ const ChallengeGenerator: React.FC = () => {
               </>
             ) : (
               <>
-                <Lightbulb className="w-5 h-5 mr-2" />
-                I need an idea
+                Need Idea
               </>
             )}
           </button>
@@ -136,11 +138,6 @@ const ChallengeGenerator: React.FC = () => {
             aria-labelledby="challenge-content"
           >
             <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center">
-                  <Lightbulb className="w-6 h-6 text-white" />
-                </div>
-              </div>
               <div className="flex-1">
                 <div className="flex items-center mb-2">
                   <span className="inline-block px-3 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
