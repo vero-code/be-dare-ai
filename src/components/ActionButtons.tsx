@@ -5,23 +5,15 @@ import type { ButtonState, MediaContent } from '../types';
 import {
   PICA_SECRET_KEY,
   PICA_GEMINI_KEY,
-  PICA_ELEVENLABS_KEY,
-  PICA_SUPPORT_MESSAGE_ACTION_ID,
-  PICA_SUPPORT_AUDIO_ACTION_ID,
   PICA_PUBLISHED_MESSAGE_ACTION_ID,
-  ELEVENLABS_VOICE_ID,
-  TAVUS_API_KEY,
-  TAVUS_REPLICA_ID,
 } from '../config/env';
 import AudioPlayer from './AudioPlayer';
 import { mockMediaContent } from '../config/mock';
-import { MOTIVATIONAL_PHRASES_START, MOTIVATIONAL_PHRASES_MIDDLE, MOTIVATIONAL_PHRASES_END, getRandomElement } from '../config/gemini_prompts';
 import ChallengeGenerator from './ChallengeGenerator';
 import SupportGenerator from './SupportGenerator';
 
 const ActionButtons: React.FC = () => {
   const [buttonStates, setButtonStates] = useState<Record<string, ButtonState>>({
-    support: { isLoading: false, isActive: false },
     published: { isLoading: false, isActive: false }
   });
 
@@ -35,116 +27,6 @@ const ActionButtons: React.FC = () => {
     "What would a kind coach say to a blogger hitting publish?",
     "Praise a blogger who feels nervous after publishing."
   ];
-
-  // Browser-compatible function to convert ArrayBuffer to Base64
-  const arrayBufferToBase64 = (buffer: ArrayBuffer): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const blob = new Blob([buffer]);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        // Extract base64 part from data URL (remove "data:application/octet-stream;base64,")
-        const base64 = dataUrl.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
-  // Action of "Support Me" button
-  const createSupportMessageAndAudio = async (): Promise<MediaContent> => {
-    console.log('Click "support" button');
-    const dynamicPrompt = `
-      Generate a short, motivational message for a content creator experiencing editing burnout.
-      Start with "${getRandomElement(MOTIVATIONAL_PHRASES_START)}".
-      Include the idea that "${getRandomElement(MOTIVATIONAL_PHRASES_MIDDLE)}".
-      End with "${getRandomElement(MOTIVATIONAL_PHRASES_END)}".
-      Keep the total message under 30 words. Focus on encouragement and the value of their work.
-    `;
-    try {
-      // 1. Generate motivational message
-      const geminiRes = await axios.post(
-        'https://api.picaos.com/v1/passthrough/models/gemini-1.5-flash:generateContent',
-        {
-          contents: [
-            {
-              parts: [
-                { text: dynamicPrompt }
-              ]
-            }
-          ]
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-pica-secret': PICA_SECRET_KEY,
-            'x-pica-connection-key': PICA_GEMINI_KEY,
-            'x-pica-action-id': PICA_SUPPORT_MESSAGE_ACTION_ID
-          }
-        }
-      );
-
-      const motivationalMessage = geminiRes.data.candidates?.[0]?.content?.parts?.[0]?.text || '🛑 You are doing amazing work! Take a breath and remember why you started creating.';
-
-      // 2. Convert to speech only if we have a valid voice ID
-      if (ELEVENLABS_VOICE_ID) {
-        try {
-          const elevenRes = await axios.post(
-            `https://api.picaos.com/v1/passthrough/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
-            {
-              text: motivationalMessage
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'x-pica-secret': PICA_SECRET_KEY,
-                'x-pica-connection-key': PICA_ELEVENLABS_KEY,
-                'x-pica-action-id': PICA_SUPPORT_AUDIO_ACTION_ID
-              },
-              responseType: 'arraybuffer'
-            }
-          );
-
-          // Convert ArrayBuffer to Base64 using browser-compatible method
-          const audioBase64 = await arrayBufferToBase64(elevenRes.data);
-          
-          return {
-            type: 'audio',
-            src: `data:audio/mpeg;base64,${audioBase64}`,
-            title: 'Motivational Support Message',
-            text: motivationalMessage
-          };
-        } catch (speechError) {
-          console.error('Error generating speech:', speechError);
-          
-          // Fallback to text-only if speech generation fails
-          return {
-            type: 'text',
-            title: 'Motivational Support 💪',
-            text: motivationalMessage
-          };
-        }
-      } else {
-        // Return text-only content when voice ID is not configured
-        console.warn('Voice ID not configured properly. Returning text-only content.');
-        return {
-          type: 'text',
-          title: 'Motivational Support 💪',
-          text: motivationalMessage
-        };
-      }
-    } catch (error) {
-      console.error('Error generating support message:', error);
-      
-      // Fallback message if everything fails
-      return {
-        type: 'text',
-        title: 'Motivational Support 💪',
-        text: '🛑 You are doing amazing work! Take a breath and remember why you started creating. Every edit brings you closer to your vision. Keep going!'
-      };
-    }
-  };
 
   // Action of "I published!" button
   const sendMotivationalMessage = async (): Promise<MediaContent> => {
@@ -197,17 +79,6 @@ const ActionButtons: React.FC = () => {
   };
 
   const handleButtonClick = async (buttonKey: string) => {
-    if (buttonKey === 'challenge') {
-      setButtonStates(prev => ({
-        ...prev,
-        [buttonKey]: {
-          ...prev[buttonKey],
-          isActive: !prev[buttonKey].isActive
-        }
-      }));
-      return;
-    }
-    
     setButtonStates(prev => ({
       ...prev,
       [buttonKey]: { ...prev[buttonKey], isLoading: true }
@@ -229,10 +100,7 @@ const ActionButtons: React.FC = () => {
     try {
       let content: MediaContent;
 
-      if (buttonKey === 'support') {
-        // Generate support message with text-to-speech
-        content = await createSupportMessageAndAudio();
-      } else if (buttonKey === 'published') {
+      if (buttonKey === 'published') {
         // Fetch dynamic motivational message for published button
         content = await sendMotivationalMessage();
       } else {
@@ -317,13 +185,7 @@ const ActionButtons: React.FC = () => {
         <div className="animate-slide-down">
           <ChallengeGenerator />
         </div>
-        <SupportGenerator
-          state={buttonStates['support']}
-          isMediaPlaying={playingMedia === 'support'}
-          onClick={() => handleButtonClick('support')}
-          onToggleMedia={() => toggleMedia('support')}
-          onAudioEnded={handleAudioEnded}
-        />
+        <SupportGenerator />
         {buttons.map((button) => {
           const { key, title, description, icon: Icon, bgColor, textColor, buttonText } = button;
           const state = buttonStates[key];

@@ -1,23 +1,140 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Heart, Play, Pause, Volume2, MessageCircle } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
-import type { ButtonState } from '../types';
+import type { ButtonState, MediaContent } from '../types';
+import axios from 'axios';
+import {
+  PICA_SECRET_KEY,
+  PICA_GEMINI_KEY,
+  PICA_ELEVENLABS_KEY,
+  PICA_SUPPORT_MESSAGE_ACTION_ID,
+  PICA_SUPPORT_AUDIO_ACTION_ID,
+  ELEVENLABS_VOICE_ID,
+} from '../config/env';
+import { MOTIVATIONAL_PHRASES_START, MOTIVATIONAL_PHRASES_MIDDLE, MOTIVATIONAL_PHRASES_END, getRandomElement } from '../config/gemini_prompts';
 
-interface SupportGeneratorProps {
-  state: ButtonState;
-  isMediaPlaying: boolean;
-  onClick: () => void;
-  onToggleMedia: () => void;
-  onAudioEnded: () => void;
-}
+const SupportGenerator: React.FC = () => {
+  const [state, setState] = useState<ButtonState>({ isLoading: false, isActive: false });
+  const [isMediaPlaying, setIsMediaPlaying] = useState(false);
 
-const SupportGenerator: React.FC<SupportGeneratorProps> = ({
-  state,
-  isMediaPlaying,
-  onClick,
-  onToggleMedia,
-  onAudioEnded
-}) => {
+  // Browser-compatible function to convert ArrayBuffer to Base64
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const blob = new Blob([buffer]);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const createSupportMessageAndAudio = async (): Promise<MediaContent> => {
+    const dynamicPrompt = `
+      Generate a short, motivational message for a content creator experiencing editing burnout.
+      Start with "${getRandomElement(MOTIVATIONAL_PHRASES_START)}".
+      Include the idea that "${getRandomElement(MOTIVATIONAL_PHRASES_MIDDLE)}".
+      End with "${getRandomElement(MOTIVATIONAL_PHRASES_END)}".
+      Keep the total message under 30 words. Focus on encouragement and the value of their work.
+    `;
+    try {
+      const geminiRes = await axios.post(
+        'https://api.picaos.com/v1/passthrough/models/gemini-1.5-flash:generateContent',
+        {
+          contents: [
+            {
+              parts: [
+                { text: dynamicPrompt }
+              ]
+            }
+          ]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-pica-secret': PICA_SECRET_KEY,
+            'x-pica-connection-key': PICA_GEMINI_KEY,
+            'x-pica-action-id': PICA_SUPPORT_MESSAGE_ACTION_ID
+          }
+        }
+      );
+
+      const motivationalMessage = geminiRes.data.candidates?.[0]?.content?.parts?.[0]?.text || '🛑 You are doing amazing work! Take a breath and remember why you started creating.';
+
+      if (ELEVENLABS_VOICE_ID) {
+        try {
+          const elevenRes = await axios.post(
+            `https://api.picaos.com/v1/passthrough/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
+            {
+              text: motivationalMessage
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'x-pica-secret': PICA_SECRET_KEY,
+                'x-pica-connection-key': PICA_ELEVENLABS_KEY,
+                'x-pica-action-id': PICA_SUPPORT_AUDIO_ACTION_ID
+              },
+              responseType: 'arraybuffer'
+            }
+          );
+
+          const audioBase64 = await arrayBufferToBase64(elevenRes.data);
+          return {
+            type: 'audio',
+            src: `data:audio/mpeg;base64,${audioBase64}`,
+            title: 'Motivational Support Message',
+            text: motivationalMessage
+          };
+        } catch (speechError) {
+          return {
+            type: 'text',
+            title: 'Motivational Support 💪',
+            text: motivationalMessage
+          };
+        }
+      } else {
+        return {
+          type: 'text',
+          title: 'Motivational Support 💪',
+          text: motivationalMessage
+        };
+      }
+    } catch (error) {
+      return {
+        type: 'text',
+        title: 'Motivational Support 💪',
+        text: '🛑 You are doing amazing work! Take a breath and remember why you started creating. Every edit brings you closer to your vision. Keep going!'
+      };
+    }
+  };
+
+  const handleClick = async () => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    setIsMediaPlaying(false);
+    try {
+      const content = await createSupportMessageAndAudio();
+      setState(prev => ({
+        isLoading: false,
+        isActive: !prev.isActive,
+        content
+      }));
+    } catch {
+      setState({ isLoading: false, isActive: false });
+    }
+  };
+
+  const handleToggleMedia = () => {
+    setIsMediaPlaying(prev => !prev);
+  };
+
+  const handleAudioEnded = () => {
+    setIsMediaPlaying(false);
+  };
+
   const textColor = 'text-purple-600';
   return (
     <div className="space-y-6">
@@ -33,7 +150,7 @@ const SupportGenerator: React.FC<SupportGeneratorProps> = ({
             Need encouragement? Get personalized motivation.
           </p>
           <button
-            onClick={onClick}
+            onClick={handleClick}
             disabled={state.isLoading}
             className={`w-full py-3 px-6 font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${
               state.isLoading
@@ -73,7 +190,7 @@ const SupportGenerator: React.FC<SupportGeneratorProps> = ({
             </div>
             {state.content.type !== 'text' && (
               <button
-                onClick={onToggleMedia}
+                onClick={handleToggleMedia}
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   isMediaPlaying 
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
@@ -107,7 +224,7 @@ const SupportGenerator: React.FC<SupportGeneratorProps> = ({
                   <AudioPlayer
                     src={state.content.src}
                     isPlaying={isMediaPlaying}
-                    onEnded={onAudioEnded}
+                    onEnded={handleAudioEnded}
                   />
                 )}
               </div>
