@@ -8,6 +8,7 @@ import {
   PICA_PUBLISHED_MESSAGE_ACTION_ID,
 } from '../../config/env';
 import BlockHeader from './BlockHeader';
+import BlockActionButton from './BlockActionButton';
 
 const PROMPT_INSTRUCTIONS = [
   "Say something uplifting to a blogger who just published a new video.",
@@ -84,31 +85,19 @@ const PublishedBlock: React.FC = () => {
             title="Post-publishing devastation"
             description="Celebrate your achievement with me!"
           />
-          <button
-            onClick={handleClick}
-            disabled={state.isLoading}
-            className={`w-full py-3 px-6 font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${
-              state.isLoading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-105 active:scale-95 shadow-md hover:shadow-lg'
-            }`}
-            aria-label={state.isLoading ? 'Loading published...' : 'I Published!'}
-          >
-            {state.isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Loading...
-              </div>
-            ) : (
-              'I Published!'
-            )}
-          </button>
+          <BlockActionButton
+          onClick={handleClick}
+          isLoading={state.isLoading}
+          label="I Published!"
+          loadingLabel="Generating..."
+          colorClass="bg-emerald-500 hover:bg-emerald-600 text-white hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+        />
         </div>
       </div>
       {/* Content Display */}
       {state.isActive && state.content && (
         <div 
-          className="bg-white rounded-xl shadow-md p-4 border-l-4 border-emerald-500 animate-slide-down"
+          className="bg-white rounded-xl shadow-md p-4 border-l-4 border-emerald-500 animate-fade-in"
           role="region"
           aria-label="Published content"
         >

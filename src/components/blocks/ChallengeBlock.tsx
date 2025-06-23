@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lightbulb, RefreshCw } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 import axios from 'axios';
 import type { Challenge } from '../../types';
 import {
@@ -8,6 +8,7 @@ import {
   PICA_IDEA_MESSAGE_ACTION_ID,
 } from '../../config/env';
 import BlockHeader from './BlockHeader';
+import BlockActionButton from './BlockActionButton';
 
 const ChallengeBlock: React.FC = () => {
   const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null);
@@ -15,7 +16,6 @@ const ChallengeBlock: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const getCreativeBlogIdea = async (): Promise<string> => {
-    console.log('Click "idea" button');
     try {
       const response = await axios.post(
         'https://api.picaos.com/v1/passthrough/models/gemini-1.5-flash:generateContent',
@@ -87,27 +87,13 @@ const ChallengeBlock: React.FC = () => {
           title="Creative Challenge Generator"
           description="No ideas for content? Take a personalized challenge!"
         />
-        <button
+        <BlockActionButton
           onClick={generateChallenge}
-          disabled={isLoading}
-          className={`inline-flex items-center px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-200 ${
-            isLoading
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-indigo-500 text-white hover:bg-indigo-600 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg'
-          }`}
-          aria-label={isLoading ? 'Generating challenge...' : 'Generate new creative challenge'}
-        >
-          {isLoading ? (
-            <>
-              <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              Need Idea
-            </>
-          )}
-        </button>
+          isLoading={isLoading}
+          label="Need Idea"
+          loadingLabel="Generating..."
+          colorClass="bg-indigo-500 hover:bg-indigo-600 text-white hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+        />
       </div>
 
       {error && (
@@ -122,7 +108,7 @@ const ChallengeBlock: React.FC = () => {
 
       {currentChallenge && (
         <div 
-          className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100 animate-fade-in"
+          className="bg-white rounded-xl shadow-md p-4 border-l-4 border-indigo-500 animate-fade-in"
           role="region"
           aria-live="polite"
           aria-labelledby="challenge-content"

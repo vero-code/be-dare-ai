@@ -13,6 +13,7 @@ import {
 } from '../../config/env';
 import { MOTIVATIONAL_PHRASES_START, MOTIVATIONAL_PHRASES_MIDDLE, MOTIVATIONAL_PHRASES_END, getRandomElement } from '../../config/gemini_prompts';
 import BlockHeader from './BlockHeader';
+import BlockActionButton from './BlockActionButton';
 
 const SupportBlock: React.FC = () => {
   const [state, setState] = useState<ButtonState>({ isLoading: false, isActive: false });
@@ -87,7 +88,7 @@ const SupportBlock: React.FC = () => {
           return {
             type: 'audio',
             src: `data:audio/mpeg;base64,${audioBase64}`,
-            title: 'Motivational Support Message',
+            title: 'Motivational Message',
             text: motivationalMessage
           };
         } catch (speechError) {
@@ -147,31 +148,19 @@ const SupportBlock: React.FC = () => {
             title="Burnout from video editing"
             description="Need encouragement? Get personalized motivation."
           />
-          <button
+          <BlockActionButton
             onClick={handleClick}
-            disabled={state.isLoading}
-            className={`w-full py-3 px-6 font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50 ${
-              state.isLoading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-purple-500 hover:bg-purple-600 text-white hover:scale-105 active:scale-95 shadow-md hover:shadow-lg'
-            }`}
-            aria-label={state.isLoading ? 'Loading support...' : 'Support Me'}
-          >
-            {state.isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Loading...
-              </div>
-            ) : (
-              'Support Me'
-            )}
-          </button>
+            isLoading={state.isLoading}
+            label="Support Me"
+            loadingLabel="Generating..."
+            colorClass="bg-purple-500 hover:bg-purple-600 text-white hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+          />
         </div>
       </div>
       {/* Content Display */}
       {state.isActive && state.content && (
         <div 
-          className="bg-white rounded-xl shadow-md p-4 border-l-4 border-indigo-500 animate-slide-down"
+          className="bg-white rounded-xl shadow-md p-4 border-l-4 border-purple-500 animate-fade-in"
           role="region"
           aria-label="Support content"
         >
