@@ -19,20 +19,19 @@ const Header: React.FC = () => {
               </p>
             </div>
           </div>
-          <nav className="hidden sm:flex items-center space-x-6">
-            <a 
-              href="#about" 
-              className="text-gray-600 hover:text-indigo-600 transition-colors duration-200"
-              aria-label="About Be Dare AI"
+          <nav className="flex items-center">
+            <a
+              href="https://bolt.new"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-4"
+              aria-label="Built with Bolt.new"
             >
-              About
-            </a>
-            <a 
-              href="#help" 
-              className="text-gray-600 hover:text-indigo-600 transition-colors duration-200"
-              aria-label="Get help"
-            >
-              Help
+              <img
+                src="/badges/black_circle_360x360.png"
+                alt="Built with Bolt.new"
+                className="w-14 h-14 sm:w-20 sm:h-20 hover:opacity-90 transition"
+              />
             </a>
           </nav>
         </div>
