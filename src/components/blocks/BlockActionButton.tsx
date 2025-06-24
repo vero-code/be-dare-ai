@@ -21,7 +21,7 @@ const BlockActionButton: React.FC<BlockActionButtonProps> = ({
   <button
     onClick={onClick}
     disabled={isLoading}
-    className={`inline-flex items-center w-full py-3 px-6 font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50
+    className={`inline-flex items-center justify-center text-center w-full py-3 px-6 font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-opacity-50
     ${
       isLoading
         ? 'bg-gray-300 text-gray-500 cursor-not-allowed'

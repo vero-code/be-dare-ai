@@ -81,7 +81,8 @@ const ChallengeBlock: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
-        <BlockHeader
+        <div className="text-center">
+          <BlockHeader
           icon={<Lightbulb className="w-8 h-8 text-white" />}
           bgColor="bg-indigo-500 hover:bg-indigo-600"
           title="No ideas for content"
@@ -94,6 +95,7 @@ const ChallengeBlock: React.FC = () => {
           loadingLabel="Generating..."
           colorClass="bg-indigo-500 hover:bg-indigo-600 text-white hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
         />
+        </div>
       </div>
 
       {error && (
